@@ -1,6 +1,26 @@
 #!/bin/bash
 # original script from blackcoin.nl (https://blackcoin.nl/scripts-for-using-blackcoin-from-the-command-line-interface/)
 # adjusted to my likes yikes!
+# also i added several functions like setpassword, changepassword, balance and addr
+# DONE
+# ----
+# * added unlock
+# * added setpassword
+# * added changepassword
+# * added balance
+# * added addr
+# * added alladdr
+# * added possiblity to use rpcuser/rpcpass
+# * added fallback for default cookie usage
+# 
+# FIXED
+# -----
+# 
+# TODO
+#-----
+# * change user/pass cmdline option 
+# * add cookie option
+# * add datadir option
 
 # ATTENTION, you need to adjust those values
 # the directory the blackcoin-cli is located at
@@ -8,39 +28,76 @@ bin_home="/home/blk/bin/"
 # the directory specified with --datadir, if not specified default is $HOME/.blackmore
 data_dir="/home/blk/.blackmore/"
 # username
-rpc_user="YOURUSER"
+rpc_user="EXAMPLE_USER"
 # password for RPC access
-rpc_password="YOURPASSWORD"
+rpc_password=""
 
-usage="Usage: blk [ info | stake | latest | dust | past24 | setpassword | changepassword | balance | addr | alladdr ] \n \n
+usage="Usage: blk [ info | unlock | stake | latest | dust | past24 | setpassword | changepassword | acctbalance | acctaddr | addrbalance | alladdr ] \n \n
 	info: Check basic info. \n
+	unlock: Unlock the wallet for transfer; Passes password without storing it in memory. \n
 	stake: Enables staking; Passes password without storing it in memory. \n
 	latest: Compares latest block with the BlackcoinNL hosted block explorer. \n
 	dust: Prunes dust from wallet. Dust is defined as less than .0001BLK. Requires jq. \n
 	past24: Shows staking numbers from the past 24hrs. \n
 	setpassword: Set encryption password if wallet is *UNENCRYPTED*.  \n
 	changepassword: change wallet password. \n
-	balance: show balance of addresses (using curl). \n
+	acctbalance: show balance of addresses derived from ACCOUNT name(using curl+cryptoid.info). \n
+	addrbalance: show balance of addresses derived from ADDRESS name(using curl+cryptoid.info). \n
 	alladdr: show all addr and balances \n
-	addr: show addresses of default wallet \n"
+	acctaddr: show addresses of wallet ACCOUNT name\n"
 
-blkc="$bin_home/blackmore-cli -rpcuser=$rpc_user -rpcpassword=$rpc_password -datadir=$data_dir"
+if [ $rpc_user = 'EXAMPLE_USER' ];then
+	echo 'No user given, using cookie.'
+	blkc="$bin_home/blackmore-cli"
+else
+	echo 'Using rpc-user-authentication scheme'
+	blkc="$bin_home/blackmore-cli -rpcuser=$rpc_user -rpcpassword=$rpc_password -datadir=$data_dir"
+
+fi	
+
 
 case $1 in
 
-balance ) account='' 
+addrbalance ) 
+	  if [ $# -ne 2 ]; then
+		  echo 'No address give.'
+		  echo 'Abort.'
+		  exit
+	  fi
+	  	addr=$2
+		bal=`curl "https://chainz.cryptoid.info/blk/api.dws?q=getbalance&a=$addr" 2>/dev/null`
+		echo "Address					Balance"
+		echo "$addr	$bal BLK"
+
+	;;
+acctbalance ) account='' 
 	  myaddr=''
 	  if [ $# -ne 2 ]; then
 		  echo 'No accountname given, using default'
 	  	  myaddr=`$blkc getaddressesbyaccount ""| jq .|grep \"B|sed -e 's/[ ",]//g'`
 	  else
 		  account=$2
-	  	  myaddr=`$blkc getaddressesbyaccount $account| jq .|grep \"B|sed -e 's/[ ",]//g'`
+	  	  myaddr=`$blkc getaddressesbyaccount "$account"| jq .|grep \"B|sed -e 's/[ ",]//g'`
 	  fi
+	  echo "Address					Balance"
 	  for item in $myaddr; do 
-		bal=`curl "https://chainz.cryptoid.info/ric/api.dws?q=getbalance&&a=$item" 2>/dev/null`
-		echo "$item: $bal"
+		bal=`curl "https://chainz.cryptoid.info/blk/api.dws?q=getbalance&a=$item" 2>/dev/null`
+		echo "$item	$bal BLK"
 	  done
+	;;
+
+acctaddr )    account='' 
+	  myaddr=''
+	  if [ $# -ne 2 ]; then
+		  echo 'No accountname given, using default'
+	  	  myaddr=`$blkc getaddressesbyaccount ""| jq .|grep \"B|sed -e 's/[ ",]//g'`
+	  else
+		  account=$2
+		  echo $account
+	  	  myaddr=`$blkc getaddressesbyaccount "$account"| jq .|grep \"B|sed -e 's/[ ",]//g'`
+	  fi
+	  echo 'Address'
+	  for i in `echo $myaddr`; do echo $i; done
 	;;
 
 alladdr ) $blkc listaddressgroupings
@@ -70,7 +127,16 @@ changepassword )
 	BLKPWNEW=null
 ;;
 
+unlock )
+	echo 'ATTENTION! Unlocking Wallet!'
+	echo 'enter Blackcoin Password'
+	read -s BLKPW
+	$blkc walletpassphrase $BLKPW 99999999 false
+	BLKPW=null
+;;
+
 stake )
+	echo 'Change Wallet to STAKING ONLY'
 	echo 'enter Blackcoin Password'
 	read -s BLKPW
 	$blkc walletpassphrase $BLKPW 99999999 true

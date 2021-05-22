@@ -29,19 +29,24 @@ rpc_password="YOURPASSWORD"
 
 Commands available
 ```
-	info: Check basic info. \n
-	stake: Enables staking; Passes password without storing it in memory. \n
-	latest: Compares latest block with the BlackcoinNL hosted block explorer. \n
-	dust: Prunes dust from wallet. Dust is defined as less than .0001BLK. Requires jq. \n
-	past24: Shows staking numbers from the past 24hrs. \n
-	setpassword: Set encryption password if wallet is *UNENCRYPTED*.  \n
-	changepassword: change wallet password. \n
-	balance: show balance of addresses (using curl). \n
-	alladdr: show all addr and balances \n
-	addr: show addresses of default wallet \n"
+Usage: blk [ info | unlock | stake | latest | dust | past24 | setpassword | changepassword | acctbalance | acctaddr | addrbalance | alladdr ]
+
+ info: Check basic info.
+ unlock: Unlock the wallet for transfer; Passes password without storing it in memory.
+ stake: Enables staking; Passes password without storing it in memory.
+ latest: Compares latest block with the BlackcoinNL hosted block explorer.
+ dust: Prunes dust from wallet. Dust is defined as less than .0001BLK. Requires jq.
+ past24: Shows staking numbers from the past 24hrs.
+ setpassword: Set encryption password if wallet is *UNENCRYPTED*.
+ changepassword: change wallet password.
+ acctbalance: show balance of addresses derived from ACCOUNT name(using curl+cryptoid.info).
+ addrbalance: show balance of addresses derived from ADDRESS name(using curl+cryptoid.info).
+ alladdr: show all addr and balances
+ acctaddr: show addresses of wallet ACCOUNT name
+
 ```
 Example:
 ```
-blk.sh info
+./blk.sh info
 ```
 
